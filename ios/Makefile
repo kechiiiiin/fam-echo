@@ -11,7 +11,8 @@
 #   make upload             API キーで App Store Connect へ上げる（Release.local.env と .p8 が要る）
 #   make release            archive → upload
 #   make device-list        実機の一覧（名前・接続・デベロッパモード）
-#   make device-install DEVICE=<名前かUDID>   開発用署名でビルドして Wi-Fi 越しに入れる（TestFlight を使えない端末用）
+#   make device-install DEVICE=<名前かUDID> [NAME=<名前>]   開発用署名でビルドして Wi-Fi 越しに入れる（TestFlight を使えない端末用）。
+#                           NAME= を付けると、その端末の送り主の名前を焼き込み、名前選びを出さず固定する（archive／release には通さない）
 #   make asc-test           asc.py（TestFlight の招待・審査提出）の単体テスト
 #
 # *.xcodeproj は生成物でコミットしない。各ターゲットの先頭で毎回 generate する（brew install xcodegen）。
@@ -141,15 +142,22 @@ device-list:
 require-device:
 	@test -n "$(DEVICE)" || { echo "DEVICE=<名前かUDID> を渡してください（make device-list で見られます）"; exit 1; }
 
+# NAME= は FAM_ECHO_FIXED_NAME としてビルド設定に渡す。シェルの変数経由なので日本語・空白があっても1引数のまま渡る。
+# 環境変数の NAME は拾わず、コマンドラインで渡されたときだけ使う
+ifeq ($(origin NAME),command line)
+FIXED_NAME := $(NAME)
+endif
+export FIXED_NAME
+
 device-install: require-device generate require-secrets
 	@set -e -o pipefail; ids="$$(python3 scripts/device.py resolve "$(DEVICE)")"; \
 	  udid="$${ids%% *}"; ident="$${ids##* }"; \
-	  echo "$(DEVICE) → UDID $$udid にビルドします（ビルド番号 $(BUILD_NUMBER)）"; \
+	  echo "$(DEVICE) → UDID $$udid にビルドします（ビルド番号 $(BUILD_NUMBER)）$${FIXED_NAME:+・名前を焼き込み}"; \
 	  mkdir -p build; \
 	  xcodebuild -project $(PROJECT) -scheme $(SCHEME) -configuration Release \
 	    -destination "id=$$udid" -derivedDataPath $(DEVICE_DD) \
 	    -allowProvisioningUpdates -allowProvisioningDeviceRegistration $(AUTH_FLAGS) \
-	    CURRENT_PROJECT_VERSION=$(BUILD_NUMBER) build 2>&1 | tee build/device.log \
+	    CURRENT_PROJECT_VERSION=$(BUILD_NUMBER) "FAM_ECHO_FIXED_NAME=$$FIXED_NAME" build 2>&1 | tee build/device.log \
 	    | grep -E '(error|warning):|BUILD (SUCCEEDED|FAILED)'; \
 	  xcrun devicectl device install app --device "$$ident" $(DEVICE_APP)
 

@@ -163,7 +163,12 @@ python3 ios/scripts/asc.py submit-review   # 2回目以降は審査が省かれ�
 ```sh
 make device-list                          # 名前・接続（wired / localNetwork）・デベロッパモードを見る
 make device-install DEVICE="<名前かUDID>"   # 開発用署名でビルドして入れる。初回はその端末を開発者アカウントに登録する
+make device-install DEVICE="<名前かUDID>" NAME="家族A"   # その iPhone の送り主の名前を焼き込む（日本語・空白可）
 ```
+
+- `NAME=` を付けると、名前が `FAM_ECHO_FIXED_NAME` としてビルドに焼き込まれる。その iPhone では **名前選びを出さず、最初からその名前で送れる**。以前に別の名前を選んでいても焼き込みが優先され、設定画面は名前を表示するだけ（変更・自由入力の手段は出ない）。決まる順番は「焼き込み → 保存済み → 名前選び」
+- `NAME=` を付けない（TestFlight・素のビルド）と、今までどおり名前選びが出て、設定から変えられる。前後の空白は除かれ、空や20文字超は焼き込み無しとして扱う（ビルドは通る）
+- 名前は一台ごとに違うので `NAME=` は `device-install` だけで受ける。`archive`／`release`（TestFlight は全員同じビルド）には通さない。実際の名前は `Config.xcconfig` にも書かない
 
 - 2回目以降はケーブル不要。Mac と同じ Wi-Fi にいて、画面ロックを解除しておく
 - 署名は **Apple Development**（有料 Program の開発用プロファイル）。プロファイルは約1年で切れる。切れたら起動しなくなるので `make device-install` を打ち直す

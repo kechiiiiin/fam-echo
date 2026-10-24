@@ -10,12 +10,18 @@ struct SettingsView: View {
     var body: some View {
         Form {
             Section("名前") {
-                NavigationLink {
-                    NameSelectView(isOnboarding: false) { _ in }
-                } label: {
-                    LabeledContent("あなたの名前", value: senderName)
+                if let fixed = config.fixedName {
+                    // 焼き込みビルド: 表示するだけ。変更の手段は出さない
+                    LabeledContent("あなたの名前", value: fixed)
+                        .accessibilityIdentifier("fixed-name")
+                } else {
+                    NavigationLink {
+                        NameSelectView(isOnboarding: false) { _ in }
+                    } label: {
+                        LabeledContent("あなたの名前", value: senderName)
+                    }
+                    .accessibilityIdentifier("change-name")
                 }
-                .accessibilityIdentifier("change-name")
             }
 
             Section("ボタン") {

@@ -4,5 +4,8 @@ FAM_ECHO_URL =
 FAM_ECHO_TOKEN =
 // 名前選択の候補（カンマ区切り）。空なら名前選択は自由入力だけになる
 FAM_ECHO_FAMILY =
+// この iPhone の送り主の名前を焼き込む（空なら焼き込み無し＝名前選びが出る）。
+// 実際の値はコミットしない。`make device-install DEVICE=... NAME=<名前>` が xcodebuild に渡す
+FAM_ECHO_FIXED_NAME =
 
 #include? "Secrets.xcconfig"

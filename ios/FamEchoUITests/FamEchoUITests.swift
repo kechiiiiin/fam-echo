@@ -18,10 +18,11 @@ final class FamEchoUITests: XCTestCase {
     }
 
     /// url / token が nil なら環境変数（無ければビルドに埋めた値）を使う。"" を渡すと未設定として起動する
-    private func launch(url: String? = nil, token: String? = nil, family: [String] = FamEchoUITests.family) {
+    private func launch(url: String? = nil, token: String? = nil, family: [String] = FamEchoUITests.family, fixedName: String? = nil) {
         var args = ["--uitest-reset", "--uitest-family", family.joined(separator: ",")]
         if let url = url ?? env["FAM_ECHO_URL"] { args += ["--uitest-url", url] }
         if let token = token ?? env["FAM_ECHO_TOKEN"] { args += ["--uitest-token", token] }
+        if let fixedName { args += ["--uitest-fixed-name", fixedName] }
         app.launchArguments = args
         app.launch()
     }
@@ -178,5 +179,25 @@ final class FamEchoUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["config-missing"].waitForExistence(timeout: 5), "未設定の表示が出ない")
         XCTAssertFalse(app.buttons["send-button"].isEnabled)
         shot("08-unconfigured")
+    }
+
+    /// 名前を焼き込んだビルド相当。名前選びが出ず、設定では名前を見られるだけで変えられない
+    func testFixedName() throws {
+        launch(fixedName: "  家族C ")  // 前後の空白は除かれる。候補（家族A・家族B）があっても名前選びは出ない
+        XCTAssertTrue(app.buttons["preset-ご飯"].waitForExistence(timeout: 5), "名前選びを飛ばしてメイン画面に入れない")
+        XCTAssertFalse(app.staticTexts["あなたは誰？"].exists, "焼き込みなのに名前選びが出ている")
+        XCTAssertFalse(app.buttons["name-家族A"].exists)
+
+        let sending = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "家族C")).firstMatch
+        XCTAssertTrue(sending.waitForExistence(timeout: 5), "焼き込んだ名前で送る表示が出ない")
+
+        app.buttons["open-settings"].tap()
+        let fixed = app.descendants(matching: .any).matching(identifier: "fixed-name").firstMatch
+        XCTAssertTrue(fixed.waitForExistence(timeout: 5))
+        XCTAssertTrue(fixed.label.contains("家族C") || fixed.value as? String == "家族C"
+                      || app.staticTexts["家族C"].exists, "設定に焼き込んだ名前が出ない: \(fixed.label)")
+        XCTAssertFalse(app.buttons["change-name"].exists, "焼き込みなのに名前の変更手段が出ている")
+        XCTAssertFalse(app.descendants(matching: .any)["custom-name-field"].exists)
+        shot("09-fixed-name-settings")
     }
 }

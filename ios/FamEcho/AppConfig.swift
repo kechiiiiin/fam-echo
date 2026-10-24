@@ -7,6 +7,8 @@ struct AppConfig {
     let token: String
     /// 名前選択画面に並べる候補。空なら自由入力だけになる
     let family: [String]
+    /// ビルドに焼き込んだ送り主の名前。あれば名前選びを出さず、この名前で固定する。不正・空なら nil
+    let fixedName: String?
 
     static let shared = AppConfig(bundle: .main, arguments: ProcessInfo.processInfo.arguments)
 
@@ -14,6 +16,7 @@ struct AppConfig {
         var rawURL = bundle.object(forInfoDictionaryKey: "FamEchoURL") as? String ?? ""
         var rawToken = bundle.object(forInfoDictionaryKey: "FamEchoToken") as? String ?? ""
         var rawFamily = bundle.object(forInfoDictionaryKey: "FamEchoFamily") as? String ?? ""
+        var rawFixedName = bundle.object(forInfoDictionaryKey: "FamEchoFixedName") as? String ?? ""
         #if DEBUG
         // UI テスト用（Debug ビルドで --uitest-reset のときだけ）: 送信先・トークン・名前候補を起動引数で差し替える。
         // Secrets.xcconfig を書き換えずに、テスト用の relay と一般名で回すため
@@ -21,6 +24,7 @@ struct AppConfig {
             if let v = Self.argument("--uitest-url", in: arguments) { rawURL = v }
             if let v = Self.argument("--uitest-token", in: arguments) { rawToken = v }
             if let v = Self.argument("--uitest-family", in: arguments) { rawFamily = v }
+            if let v = Self.argument("--uitest-fixed-name", in: arguments) { rawFixedName = v }
         }
         #endif
         rawURL = rawURL.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -31,6 +35,14 @@ struct AppConfig {
         }
         token = rawToken.trimmingCharacters(in: .whitespacesAndNewlines)
         family = Self.parseFamily(rawFamily)
+        fixedName = Self.parseFixedName(rawFixedName)
+    }
+
+    /// 焼き込みの名前。前後の空白を除き、空・長すぎる名前は「焼き込み無し」（nil）として扱う
+    static func parseFixedName(_ raw: String) -> String? {
+        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !name.isEmpty, name.count <= SenderName.maxLength else { return nil }
+        return name
     }
 
     /// 「名前A,名前B」→ ["名前A", "名前B"]。空白を除き、空・重複・長すぎる名前は落とす

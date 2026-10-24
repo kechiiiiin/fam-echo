@@ -14,7 +14,7 @@
 #   make check           iOS アプリを xcodegen → シミュレータ向けビルド（警告0・エラー0で成功）
 #   make sim / uitest    iOS をシミュレータで起動 / UI テスト（ios/Makefile）
 #   make archive / export-testflight / upload / release   TestFlight 向けに作る・書き出す・上げる（ios/Makefile）
-#   make device-list / device-install DEVICE=<名前かUDID>  開発用ビルドを実機へ Wi-Fi 越しに入れる（ios/Makefile）
+#   make device-list / device-install DEVICE=<名前かUDID> [NAME=<送り主の名前>]  開発用ビルドを実機へ Wi-Fi 越しに入れる。NAME= でその端末の名前を焼き込む（ios/Makefile）
 #   make asc-test        TestFlight の道具（ios/scripts/asc.py）の単体テスト
 
 PYTHON    ?= $(shell command -v python3)
@@ -100,4 +100,4 @@ archive export-testflight upload release device-list asc-test:
 	$(MAKE) -C ios $@
 
 device-install:
-	$(MAKE) -C ios device-install DEVICE="$(DEVICE)"
+	$(MAKE) -C ios device-install DEVICE="$(DEVICE)" NAME="$(NAME)"

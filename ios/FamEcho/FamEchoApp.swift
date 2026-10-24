@@ -13,6 +13,10 @@ struct FamEchoApp: App {
             UserDefaults.standard.removePersistentDomain(forName: domain)
             UserDefaults.standard.removeObject(forKey: SenderName.key)
         }
+        // 名前を焼き込んだビルドは、以前に選んで残っている名前より焼き込みを優先する（名前の順番: 焼き込み → 保存済み → 名前選び）
+        if let fixed = AppConfig.shared.fixedName {
+            UserDefaults.standard.set(fixed, forKey: SenderName.key)
+        }
         do {
             let config = ModelConfiguration(isStoredInMemoryOnly: resetForUITest)
             container = try ModelContainer(for: Preset.self, SentEntry.self, configurations: config)
@@ -29,14 +33,14 @@ struct FamEchoApp: App {
     }
 }
 
-/// 名前が未設定なら「あなたは誰？」、設定済みならメイン画面。
+/// 名前が未設定なら「あなたは誰？」、設定済みならメイン画面。焼き込みがあれば最初からメイン画面。
 struct RootView: View {
-    @AppStorage(SenderName.key) private var senderName = ""
+    @AppStorage(SenderName.key) private var senderName = AppConfig.shared.fixedName ?? ""
     @Environment(\.modelContext) private var context
 
     var body: some View {
         Group {
-            if senderName.isEmpty {
+            if AppConfig.shared.fixedName == nil && senderName.isEmpty {
                 NameSelectView(isOnboarding: true) { senderName = $0 }
             } else {
                 MainView()

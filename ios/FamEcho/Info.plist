@@ -30,6 +30,9 @@
 	<!-- 名前選択の候補（カンマ区切り）。空なら自由入力だけ -->
 	<key>FamEchoFamily</key>
 	<string>$(FAM_ECHO_FAMILY)</string>
+	<!-- この端末の送り主の名前（焼き込み）。空なら名前選びが出る -->
+	<key>FamEchoFixedName</key>
+	<string>$(FAM_ECHO_FIXED_NAME)</string>
 	<!-- 本番は Cloudflare Tunnel の HTTPS。開発時に Mac の relay（http://127.0.0.1 / *.local）へ直接送れるようにする -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
