@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#E8742C"/>
+  <!-- 家 -->
+  <path d="M232 520 L512 280 L792 520 L792 800 L232 800 Z" fill="#FFF6EC"/>
+  <!-- 声の波 -->
+  <circle cx="512" cy="600" r="56" fill="#E8742C"/>
+  <path d="M412 520 A140 140 0 0 0 412 680" stroke="#E8742C" stroke-width="36" fill="none" stroke-linecap="round"/>
+  <path d="M612 520 A140 140 0 0 1 612 680" stroke="#E8742C" stroke-width="36" fill="none" stroke-linecap="round"/>
+  <path d="M340 460 A240 240 0 0 0 340 740" stroke="#E8742C" stroke-width="36" fill="none" stroke-linecap="round" opacity="0.6"/>
+  <path d="M684 460 A240 240 0 0 1 684 740" stroke="#E8742C" stroke-width="36" fill="none" stroke-linecap="round" opacity="0.6"/>
+</svg>

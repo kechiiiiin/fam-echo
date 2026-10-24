@@ -1,0 +1,8 @@
+// コミットしてよい既定値。実際の値は Secrets.xcconfig（gitignore）に書く。
+// Secrets.xcconfig が無くてもビルドは通り、アプリ内に「送信先が未設定」と出る。
+FAM_ECHO_URL =
+FAM_ECHO_TOKEN =
+// 名前選択の候補（カンマ区切り）。空なら名前選択は自由入力だけになる
+FAM_ECHO_FAMILY =
+
+#include? "Secrets.xcconfig"

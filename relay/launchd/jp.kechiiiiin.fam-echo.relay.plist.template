@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- make relay-plist が @PYTHON@ / @RELAY_DIR@ / @LOG_DIR@ を埋めて relay/build/ に書き出す -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>jp.kechiiiiin.fam-echo.relay</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>@PYTHON@</string>
+    <string>@RELAY_DIR@/fam_echo_relay.py</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>@RELAY_DIR@</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>FAM_ECHO_ENV_FILE</key>
+    <string>@RELAY_DIR@/.env</string>
+    <key>PYTHONUNBUFFERED</key>
+    <string>1</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>@LOG_DIR@/relay.log</string>
+  <key>StandardErrorPath</key>
+  <string>@LOG_DIR@/relay.log</string>
+</dict>
+</plist>

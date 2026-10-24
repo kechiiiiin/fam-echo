@@ -1,0 +1,8 @@
+# make tunnel-plist が @HOME@ を埋めて tunnel/build/config.yml に書き出す
+tunnel: 72aee2c5-fe0c-44e1-8b8f-f87b9e049e5a
+credentials-file: @HOME@/.cloudflared/72aee2c5-fe0c-44e1-8b8f-f87b9e049e5a.json
+
+ingress:
+  - hostname: fam-echo.kechiiiiin.com
+    service: http://127.0.0.1:8790
+  - service: http_status:404

@@ -1,0 +1,71 @@
+name: FamEcho
+
+options:
+  bundleIdPrefix: jp.kechiiiiin
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+  minimumXcodeGenVersion: "2.40.0"
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    SWIFT_STRICT_CONCURRENCY: minimal
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    DEAD_CODE_STRIPPING: YES
+
+targets:
+  FamEcho:
+    type: application
+    platform: iOS
+    sources:
+      - path: FamEcho
+        excludes:
+          - "Info.plist"
+    # 送信先 URL とトークンは Config.xcconfig → (#include?) Secrets.xcconfig から入り、Info.plist 経由で読む
+    configFiles:
+      Debug: Config.xcconfig
+      Release: Config.xcconfig
+    settings:
+      base:
+        PRODUCT_NAME: FamEcho
+        PRODUCT_BUNDLE_IDENTIFIER: jp.kechiiiiin.famecho
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: FamEcho/Info.plist
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 7Z4R4TQPZL
+        SWIFT_EMIT_LOC_STRINGS: YES
+        ENABLE_PREVIEWS: YES
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+
+  FamEchoUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - path: FamEchoUITests
+    dependencies:
+      - target: FamEcho
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        PRODUCT_BUNDLE_IDENTIFIER: jp.kechiiiiin.famecho.uitests
+        CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 7Z4R4TQPZL
+        TEST_TARGET_NAME: FamEcho
+
+schemes:
+  FamEcho:
+    build:
+      targets:
+        FamEcho: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - FamEchoUITests
+    archive:
+      config: Release

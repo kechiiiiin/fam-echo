@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- make tunnel-plist が @CLOUDFLARED@ / @CONFIG@ / @LOG_DIR@ を埋めて tunnel/build/ に書き出す -->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>jp.kechiiiiin.fam-echo.tunnel</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>@CLOUDFLARED@</string>
+    <string>tunnel</string>
+    <string>--config</string>
+    <string>@CONFIG@</string>
+    <string>run</string>
+    <string>fam-echo</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>@LOG_DIR@/tunnel.log</string>
+  <key>StandardErrorPath</key>
+  <string>@LOG_DIR@/tunnel.log</string>
+</dict>
+</plist>

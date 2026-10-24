@@ -1,0 +1,33 @@
+# シークレット（コミットしない）
+.env
+relay/.env
+ios/Secrets.xcconfig
+
+# relay
+__pycache__/
+*.pyc
+relay/build/
+relay/logs/
+
+# tunnel（生成物）
+tunnel/build/
+
+# Xcode / xcodegen（.xcodeproj は project.yml から生成）
+*.xcodeproj
+build/
+build-check/
+DerivedData/
+*.xcresult
+xcuserdata/
+*.xcuserstate
+
+# macOS
+.DS_Store
+
+# 配る（TestFlight）: 生成物には送信先とトークンが埋め込まれる
+*.xcarchive
+*.ipa
+*.dSYM.zip
+ios/build/
+ios/Release.local.env
+*.p8
