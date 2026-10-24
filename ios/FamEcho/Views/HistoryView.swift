@@ -62,10 +62,10 @@ struct HistoryView: View {
             }
         }
         .sheet(item: $saving) { entry in
-            PresetEditorView(title: "ボタンに保存", label: Preset.suggestedLabel(for: entry.text), text: entry.text) { label, text in
-                context.insert(Preset(label: label, text: text, order: Preset.nextOrder(in: context)))
+            PresetEditorView(title: "ボタンに保存", text: entry.text) { text in
+                context.insert(Preset(text: text, order: Preset.nextOrder(in: context)))
                 try? context.save()
-                savedNotice = "「\(label)」をボタンに保存しました"
+                savedNotice = "「\(text)」をボタンに保存しました"
             }
         }
         .safeAreaInset(edge: .bottom) {

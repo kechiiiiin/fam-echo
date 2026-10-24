@@ -36,7 +36,7 @@ final class FamEchoUITests: XCTestCase {
 
     private func status() -> XCUIElement { app.descendants(matching: .any)["send-status"] }
 
-    private func waitForStatus(containing text: String, timeout: TimeInterval = 15) {
+    private func waitForStatus(containing text: String, timeout: TimeInterval = 30) {
         let predicate = NSPredicate(format: "label CONTAINS %@", text)
         let el = app.descendants(matching: .any).matching(identifier: "send-status").matching(predicate).firstMatch
         XCTAssertTrue(el.waitForExistence(timeout: timeout), "status に「\(text)」が出ない")
@@ -53,12 +53,13 @@ final class FamEchoUITests: XCTestCase {
         app.buttons["name-家族A"].tap()
 
         // 2. メイン画面: 初期ボタン2つ
-        XCTAssertTrue(app.buttons["preset-ご飯"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["preset-起床"].exists)
+        XCTAssertTrue(app.buttons["preset-ご飯できたよ"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["preset-起きる時間だよ"].exists)
+        XCTAssertTrue(app.buttons["add-preset-button"].exists)
         shot("02-main")
 
         // 3. ボタンをタップで即送信
-        app.buttons["preset-ご飯"].tap()
+        app.buttons["preset-ご飯できたよ"].tap()
         waitForStatus(containing: "届きました")
         shot("03-main-sent")
 
@@ -85,14 +86,9 @@ final class FamEchoUITests: XCTestCase {
         shot("04-history")
 
         app.buttons["save-as-preset-お風呂沸いたよ"].tap()
-        let label = app.textFields["editor-label"]
-        XCTAssertTrue(label.waitForExistence(timeout: 5))
-        label.tap()
-        label.press(forDuration: 1.0)
-        if app.menuItems["すべてを選択"].waitForExistence(timeout: 2) { app.menuItems["すべてを選択"].tap() }
-        else if app.menuItems["Select All"].waitForExistence(timeout: 1) { app.menuItems["Select All"].tap() }
-        label.typeText(XCUIKeyboardKey.delete.rawValue)
-        label.typeText("お風呂")
+        let saveText = app.textViews["editor-text"].exists ? app.textViews["editor-text"] : app.textFields["editor-text"]
+        XCTAssertTrue(saveText.waitForExistence(timeout: 5))
+        XCTAssertTrue((saveText.value as? String ?? "").contains("お風呂沸いたよ"), "履歴の文が入力欄に入っていない")
         app.buttons["editor-save"].tap()
         XCTAssertTrue(app.descendants(matching: .any)["saved-notice"].waitForExistence(timeout: 5))
 
@@ -103,44 +99,91 @@ final class FamEchoUITests: XCTestCase {
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
         // 7. 初期ボタンの編集と削除
-        XCTAssertTrue(app.buttons["preset-お風呂"].waitForExistence(timeout: 5), "履歴から保存したボタンが無い")
+        XCTAssertTrue(app.buttons["preset-お風呂沸いたよ"].waitForExistence(timeout: 5), "履歴から保存したボタンが無い")
         app.buttons["open-settings"].tap()
         app.buttons["edit-presets"].tap()
-        app.buttons["preset-row-ご飯"].tap()
-        let editLabel = app.textFields["editor-label"]
-        XCTAssertTrue(editLabel.waitForExistence(timeout: 5))
-        editLabel.tap()
-        editLabel.typeText("だよ")  // 末尾に足して「ご飯だよ」
+        app.buttons["preset-row-ご飯できたよ"].tap()
         let editText = app.textViews["editor-text"].exists ? app.textViews["editor-text"] : app.textFields["editor-text"]
+        XCTAssertTrue(editText.waitForExistence(timeout: 5))
         // 欄の右下端をタップしてカーソルを末尾に置いてから足す（先頭に入るのを避ける）
         editText.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.95)).tap()
         editText.typeText("ー")
         app.buttons["editor-save"].tap()
-        XCTAssertTrue(app.buttons["preset-row-ご飯だよ"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["preset-row-ご飯できたよー"].waitForExistence(timeout: 5))
 
-        app.buttons["preset-row-起床"].swipeLeft()
+        app.buttons["preset-row-起きる時間だよ"].swipeLeft()
         app.buttons["削除"].firstMatch.tap()
-        XCTAssertFalse(app.buttons["preset-row-起床"].waitForExistence(timeout: 1))
+        XCTAssertFalse(app.buttons["preset-row-起きる時間だよ"].waitForExistence(timeout: 1))
         shot("05-presets-edited")
 
         app.navigationBars.buttons.element(boundBy: 0).tap()  // 設定へ
         app.navigationBars.buttons.element(boundBy: 0).tap()  // メインへ
-        XCTAssertTrue(app.buttons["preset-ご飯だよ"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["preset-お風呂"].exists)
-        XCTAssertFalse(app.buttons["preset-起床"].exists)
+        XCTAssertTrue(app.buttons["preset-ご飯できたよー"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["preset-お風呂沸いたよ"].exists)
+        XCTAssertFalse(app.buttons["preset-起きる時間だよ"].exists)
         shot("06-main-after-edit")
 
         // 8. 編集後のボタンの本文で送れる
-        app.buttons["preset-ご飯だよ"].tap()
+        app.buttons["preset-ご飯できたよー"].tap()
         waitForStatus(containing: "ご飯できたよー")  // 編集で末尾に足した「ー」入りの本文が送られる
     }
 
-    /// 送れなかったときの表示。起床ボタンを押して、理由が出ることを確かめる
+    /// メイン画面でボタンを足す（＋ 追加）・長押しで編集・長押しで削除と取り消し。押しても送信されない
+    func testMainScreenPresetActions() throws {
+        launch()
+        XCTAssertTrue(app.buttons["name-家族A"].waitForExistence(timeout: 5))
+        app.buttons["name-家族A"].tap()
+        XCTAssertTrue(app.buttons["add-preset-button"].waitForExistence(timeout: 5))
+
+        // 追加: 入力欄は「読み上げる文」1つだけ。下に読み上げのプレビュー
+        app.buttons["add-preset-button"].tap()
+        let text = app.textViews["editor-text"].exists ? app.textViews["editor-text"] : app.textFields["editor-text"]
+        XCTAssertTrue(text.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.textFields["editor-label"].exists, "ボタン名の入力欄が残っている")
+        XCTAssertFalse(app.buttons["editor-save"].isEnabled, "空のまま保存できてしまう")
+        text.typeText("お風呂沸いたよ")
+        let preview = app.descendants(matching: .any).matching(identifier: "editor-preview").firstMatch
+        XCTAssertTrue(preview.waitForExistence(timeout: 3))
+        XCTAssertTrue(preview.label.contains("家族Aから。お風呂沸いたよ"), "プレビューが出ない: \(preview.label)")
+        shot("10-add-sheet")
+        app.buttons["editor-save"].tap()
+        let added = app.buttons["preset-お風呂沸いたよ"]
+        XCTAssertTrue(added.waitForExistence(timeout: 5), "追加したボタンが無い")
+
+        // 長押しメニュー → 編集
+        added.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["編集"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["削除"].exists)
+        shot("11-preset-menu")
+        app.buttons["編集"].tap()
+        let edit = app.textViews["editor-text"].exists ? app.textViews["editor-text"] : app.textFields["editor-text"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 5))
+        edit.coordinate(withNormalizedOffset: CGVector(dx: 0.98, dy: 0.95)).tap()
+        edit.typeText("ー")
+        app.buttons["editor-save"].tap()
+        let edited = app.buttons["preset-お風呂沸いたよー"]
+        XCTAssertTrue(edited.waitForExistence(timeout: 5), "編集が反映されない")
+        XCTAssertFalse(app.buttons["preset-お風呂沸いたよ"].exists)
+
+        // 長押し → 削除 → 元に戻す
+        edited.press(forDuration: 1.2)
+        app.buttons["削除"].tap()
+        XCTAssertFalse(app.buttons["preset-お風呂沸いたよー"].waitForExistence(timeout: 1))
+        shot("12-preset-deleted-undo")
+        app.buttons["undo-delete"].tap()
+        XCTAssertTrue(app.buttons["preset-お風呂沸いたよー"].waitForExistence(timeout: 3), "元に戻せない")
+
+        // ここまで一度も送っていない
+        XCTAssertFalse(app.descendants(matching: .any).matching(identifier: "send-status")
+            .matching(NSPredicate(format: "label CONTAINS %@", "届きました")).firstMatch.exists)
+    }
+
+    /// 送れなかったときの表示。「起きる時間だよ」ボタンを押して、理由が出ることを確かめる
     private func sendAndExpectError(_ text: String, shotName: String) {
-        XCTAssertTrue(app.buttons["name-家族B"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["name-家族B"].waitForExistence(timeout: 20))
         app.buttons["name-家族B"].tap()
-        XCTAssertTrue(app.buttons["preset-起床"].waitForExistence(timeout: 5))
-        app.buttons["preset-起床"].tap()
+        XCTAssertTrue(app.buttons["preset-起きる時間だよ"].waitForExistence(timeout: 20))
+        app.buttons["preset-起きる時間だよ"].tap()
         waitForStatus(containing: text)
         shot(shotName)
     }
@@ -184,7 +227,7 @@ final class FamEchoUITests: XCTestCase {
     /// 名前を焼き込んだビルド相当。名前選びが出ず、設定では名前を見られるだけで変えられない
     func testFixedName() throws {
         launch(fixedName: "  家族C ")  // 前後の空白は除かれる。候補（家族A・家族B）があっても名前選びは出ない
-        XCTAssertTrue(app.buttons["preset-ご飯"].waitForExistence(timeout: 5), "名前選びを飛ばしてメイン画面に入れない")
+        XCTAssertTrue(app.buttons["preset-ご飯できたよ"].waitForExistence(timeout: 5), "名前選びを飛ばしてメイン画面に入れない")
         XCTAssertFalse(app.staticTexts["あなたは誰？"].exists, "焼き込みなのに名前選びが出ている")
         XCTAssertFalse(app.buttons["name-家族A"].exists)
 

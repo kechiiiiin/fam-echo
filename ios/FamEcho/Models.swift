@@ -2,6 +2,8 @@ import Foundation
 import SwiftData
 
 /// メイン画面に並ぶボタン（保存した文）。端末内だけに保存し、家族間では共有しない。
+/// ボタンには文（text）だけを出す。`label` は旧版（ボタン名＋文の2段表示）の名残で、いまは使わない。
+/// SwiftData の保存済みデータを壊さず読み続けるため、プロパティ自体は残している（消すとスキーマ変更になる）。
 @Model
 final class Preset {
     var label: String
@@ -9,17 +11,14 @@ final class Preset {
     var order: Int
     var createdAt: Date
 
-    init(label: String, text: String, order: Int, createdAt: Date = .now) {
-        self.label = label
+    init(text: String, order: Int, createdAt: Date = .now) {
+        self.label = ""
         self.text = text
         self.order = order
         self.createdAt = createdAt
     }
 
-    static let defaults: [(label: String, text: String)] = [
-        ("ご飯", "ご飯できたよ"),
-        ("起床", "起きる時間だよ"),
-    ]
+    static let defaults: [String] = ["ご飯できたよ", "起きる時間だよ"]
 
     private static let seededKey = "didSeedDefaultPresets"
 
@@ -32,8 +31,8 @@ final class Preset {
         } else {
             guard !defaultsStore.bool(forKey: seededKey) else { return }
         }
-        for (index, item) in defaults.enumerated() {
-            context.insert(Preset(label: item.label, text: item.text, order: index))
+        for (index, text) in defaults.enumerated() {
+            context.insert(Preset(text: text, order: index))
         }
         try? context.save()
         if !inMemory { defaultsStore.set(true, forKey: seededKey) }
@@ -43,12 +42,6 @@ final class Preset {
         var descriptor = FetchDescriptor<Preset>(sortBy: [SortDescriptor(\.order, order: .reverse)])
         descriptor.fetchLimit = 1
         return ((try? context.fetch(descriptor))?.first?.order ?? -1) + 1
-    }
-
-    /// 履歴から保存するときのラベル案（先頭の数文字）
-    static func suggestedLabel(for text: String) -> String {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.count <= 8 ? trimmed : String(trimmed.prefix(8))
     }
 }
 

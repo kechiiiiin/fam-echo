@@ -86,8 +86,8 @@ HA_URL=http://127.0.0.1:18123 HA_TOKEN_FILE="$TMPDIR/fake-ha-token" python3 rela
 
 - SwiftUI・iOS 17 以上・xcodegen（`ios/project.yml`）。bundle id `jp.kechiiiiin.famecho`、表示名 `fam-echo`
 - 初回は「あなたは誰？」（家族の名前のボタン＋自由入力）。設定から変えられる。名前の候補はソースに書かず、ビルド時に `FAM_ECHO_FAMILY`（カンマ区切り）で入れる。空なら自由入力だけ
-- メイン画面: 上に保存した文のボタン（タップで即送信）、下に入力欄と送信ボタン。送信中・届いた・送れなかった（理由つき）を表示
-- 初期ボタン「ご飯」→「ご飯できたよ」、「起床」→「起きる時間だよ」。どれも編集・削除・並べ替え・追加できる（設定 →「ボタンの編集・並べ替え」）
+- メイン画面: 上に保存した文だけを出した横長ボタンの1列（タップで即送信・長押しで「編集」「削除」・削除は「元に戻す」付き）と最後の「＋ 追加」、下に大きな入力欄と横長の送信ボタン。右上に「履歴」と設定。送信中・届いた・送れなかった（理由つき）を表示
+- 初期ボタンは「ご飯できたよ」「起きる時間だよ」。ボタン名は無く、読み上げる文がそのまま表示される。どれも編集・削除・追加でき、並べ替えは設定 →「ボタンの編集・並べ替え」
 - 履歴（新しい順・日時つき）。行の右のアイコンか右スワイプで「ボタンに保存」、左スワイプで削除、右上の「すべて削除」
 - 入力欄は Enter で送信しない（改行になるだけ・`onSubmit` なし）。日本語 IME の変換確定で誤送信しない
 - 送信先・トークン・名前の候補は**ビルド時に埋め込む**: `ios/Secrets.xcconfig`（gitignore）→ `Config.xcconfig` が `#include?` → Info.plist → `AppConfig`。送信先が無ければアプリに「送信先 URL とトークンが未設定です」と出て送信ボタンが押せない
@@ -101,7 +101,7 @@ make uitest    # UI テストだけ（送信先は TEST_RUNNER_FAM_ECHO_URL / _T
 ios/export-shots.sh [xxx.xcresult]   # UI テストのスクリーンショットを ios/docs/ に書き出す
 ```
 
-UI テストは名前の候補を起動引数 `--uitest-family 家族A,家族B` で、送信先とトークンを `--uitest-url` / `--uitest-token` で差し込む（Debug ビルドで `--uitest-reset` のときだけ効く。`Secrets.xcconfig` は書き換えない）。`testFullFlow` は「名前選択 → ボタンで送信 → 入力欄で Return（送信されないこと）→ 送信ボタン → 履歴（新しい順）→ 履歴からボタンに保存 → 履歴を1件削除 → 初期ボタンの編集と削除 → 編集後のボタンで送信」を通しで確かめる。`testErrorUnauthorized` / `testErrorHADown` / `testErrorUnreachable` は失敗表示、`testUnconfigured` は送信先と名前の候補が空のときの表示を確かめる。画面は `ios/docs/*.png`。
+UI テストは名前の候補を起動引数 `--uitest-family 家族A,家族B` で、送信先とトークンを `--uitest-url` / `--uitest-token` で差し込む（Debug ビルドで `--uitest-reset` のときだけ効く。`Secrets.xcconfig` は書き換えない）。`testFullFlow` は「名前選択 → ボタンで送信 → 入力欄で Return（送信されないこと）→ 送信ボタン → 履歴（新しい順）→ 履歴からボタンに保存 → 履歴を1件削除 → 初期ボタンの編集と削除 → 編集後のボタンで送信」を、`testMainScreenPresetActions` は「＋ 追加 → 長押しで編集 → 長押しで削除と元に戻す」を確かめる。`testErrorUnauthorized` / `testErrorHADown` / `testErrorUnreachable` は失敗表示、`testUnconfigured` は送信先と名前の候補が空のときの表示を確かめる。画面は `ios/docs/*.png`。
 
 ## 配る（TestFlight／実機へ直接）
 

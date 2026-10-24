@@ -1,7 +1,7 @@
 import SwiftData
 import SwiftUI
 
-/// ボタンの編集・削除・並べ替え・追加。初期の「ご飯」「起床」も同じ扱い。
+/// ボタンの編集・削除・並べ替え・追加。初期のボタンも同じ扱い。
 struct PresetListView: View {
     @Environment(\.modelContext) private var context
     @Query(sort: \Preset.order) private var presets: [Preset]
@@ -16,14 +16,12 @@ struct PresetListView: View {
                     Button {
                         editing = preset
                     } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(preset.label).font(.headline)
-                            Text(preset.text).font(.subheadline).foregroundStyle(.secondary)
-                        }
-                        .foregroundStyle(.primary)
+                        Text(preset.text)
+                            .font(.body)
+                            .foregroundStyle(.primary)
                     }
                     .tint(.primary)
-                    .accessibilityIdentifier("preset-row-\(preset.label)")
+                    .accessibilityIdentifier("preset-row-\(preset.text)")
                 }
                 .onDelete(perform: delete)
                 .onMove(perform: move)
@@ -47,15 +45,14 @@ struct PresetListView: View {
             }
         }
         .sheet(item: $editing) { preset in
-            PresetEditorView(title: "ボタンを編集", label: preset.label, text: preset.text) { label, text in
-                preset.label = label
+            PresetEditorView(title: "ボタンを編集", text: preset.text) { text in
                 preset.text = text
                 try? context.save()
             }
         }
         .sheet(isPresented: $adding) {
-            PresetEditorView(title: "ボタンを追加", label: "", text: "") { label, text in
-                context.insert(Preset(label: label, text: text, order: Preset.nextOrder(in: context)))
+            PresetEditorView(title: "ボタンを追加", text: "") { text in
+                context.insert(Preset(text: text, order: Preset.nextOrder(in: context)))
                 try? context.save()
             }
         }
