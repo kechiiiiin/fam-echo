@@ -7,6 +7,13 @@ struct SettingsView: View {
 
     private let config = AppConfig.shared
 
+    private var versionText: String {
+        let info = Bundle.main
+        let version = info.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "-"
+        let build = info.object(forInfoDictionaryKey: "CFBundleVersion") as? String
+        return build.map { "\(version)（\($0)）" } ?? version
+    }
+
     var body: some View {
         Form {
             Section("名前") {
@@ -25,20 +32,18 @@ struct SettingsView: View {
             }
 
             Section("ボタン") {
-                NavigationLink("ボタンの編集・並べ替え") {
+                NavigationLink("ボタンの並べ替え") {
                     PresetListView()
                 }
                 .accessibilityIdentifier("edit-presets")
             }
 
             Section {
-                LabeledContent("送信先", value: config.baseURL?.host ?? "未設定")
-                LabeledContent("トークン", value: config.token.isEmpty ? "未設定" : "設定済み")
                 Button {
                     checkHealth()
                 } label: {
                     HStack {
-                        Text("つながるか確かめる")
+                        Text("Echo につながるか確かめる")
                         if checking { Spacer(); ProgressView() }
                     }
                 }
@@ -48,17 +53,15 @@ struct SettingsView: View {
                         .font(.footnote)
                         .accessibilityIdentifier("health-result")
                 }
-            } header: {
-                Text("送信先")
-            } footer: {
-                Text("送信先とトークンはビルド時に埋め込まれます（ios/Secrets.xcconfig）")
             }
 
             Section {
-                Text("ボタンと履歴はこの iPhone の中だけに保存され、家族とは共有されません。")
+                Text("バージョン \(versionText)")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                LabeledContent("バージョン", value: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "-")
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                    .accessibilityIdentifier("app-version")
             }
         }
         .navigationTitle("設定")
@@ -72,12 +75,12 @@ struct SettingsView: View {
             do {
                 let health = try await SpeakClient().health()
                 if let ha = health.ha, !ha.reachable {
-                    healthResult = "窓口には届きました。Home Assistant には届いていません"
+                    healthResult = "家の Mac には届きましたが、Echo の仕組み（Home Assistant）に届いていません"
                 } else {
-                    healthResult = "窓口にも Home Assistant にも届きました"
+                    healthResult = "つながりました"
                 }
             } catch {
-                healthResult = "届きません: \(error.localizedDescription)"
+                healthResult = "つながりません。家の Wi-Fi か通信を確かめてください"
             }
         }
     }

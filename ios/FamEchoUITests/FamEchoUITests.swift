@@ -241,6 +241,13 @@ final class FamEchoUITests: XCTestCase {
                       || app.staticTexts["家族C"].exists, "設定に焼き込んだ名前が出ない: \(fixed.label)")
         XCTAssertFalse(app.buttons["change-name"].exists, "焼き込みなのに名前の変更手段が出ている")
         XCTAssertFalse(app.descendants(matching: .any)["custom-name-field"].exists)
+        // 家族向けに余計な情報は出さない
+        XCTAssertTrue(app.buttons["Echo につながるか確かめる"].exists)
+        XCTAssertTrue(app.buttons["edit-presets"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "バージョン")).firstMatch.exists)
+        for hidden in ["送信先", "トークン", "ios/Secrets.xcconfig", "この iPhone の中だけ"] {
+            XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", hidden)).firstMatch.exists, "\(hidden) が出ている")
+        }
         shot("09-fixed-name-settings")
     }
 }
