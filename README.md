@@ -82,6 +82,21 @@ HA_URL=http://127.0.0.1:18123 HA_TOKEN_FILE="$TMPDIR/fake-ha-token" python3 rela
 4. `make install` — relay と Tunnel の両方を launchd で常駐（Tunnel だけなら `make tunnel-install`）
 5. `curl -s https://fam-echo.kechiiiiin.com/health` で確かめる。ログは `make tunnel-log`、やめるときは `make tunnel-uninstall`
 
+## 見張り（HA が落ちたら起こす）
+
+Docker Desktop や HA のコンテナが落ちたまま気づかない事故を防ぐ。`watchdog/fam_echo_watchdog.sh` を launchd が5分ごとに走らせる。
+
+- `http://localhost:8123/`（`HA_URL` で変更可）が 200 なら**何もしない（無音）**
+- 落ちていれば、Docker の daemon が無い → `docker desktop start`（だめなら `open -a "Docker Desktop"`）、コンテナだけ止まっている → `docker start homeassistant`。最大180秒、復旧を待つ
+- 復旧に失敗したときだけ、環境変数 `FAM_ECHO_WATCHDOG_NOTIFY` のコマンドに本文を渡す（未設定なら何もしない）
+
+```sh
+make watchdog-test      # 単体テスト（docker / curl は偽コマンド）
+make watchdog-install   # 常駐（jp.kechiiiiin.fam-echo.watchdog）。make install にも含む
+make watchdog-uninstall
+make watchdog-log       # ~/Library/Logs/fam-echo/watchdog.log（異常と復旧だけが残る）
+```
+
 ## iOS アプリ（ios/）
 
 - SwiftUI・iOS 17 以上・xcodegen（`ios/project.yml`）。bundle id `jp.kechiiiiin.famecho`、表示名 `fam-echo`

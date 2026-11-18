@@ -10,7 +10,12 @@
 #   make tunnel-install  plist を ~/Library/LaunchAgents に置いて launchctl で常駐させる
 #   make tunnel-uninstall Tunnel の常駐をやめて plist を消す
 #   make tunnel-log      Tunnel のログを追う
-#   make install         relay-install と tunnel-install の両方
+#   make watchdog-test   HA 見張りの単体テスト（docker / curl は偽コマンド）
+#   make watchdog-plist  見張りの plist を watchdog/build/ に書き出して検証するだけ
+#   make watchdog-install 見張りを launchd に常駐させる（5分ごとに HA を確認し、落ちていれば起こす）
+#   make watchdog-uninstall 見張りの常駐をやめて plist を消す
+#   make watchdog-log    見張りのログを追う
+#   make install         relay・tunnel・watchdog の全部
 #   make check           iOS アプリを xcodegen → シミュレータ向けビルド（警告0・エラー0で成功）
 #   make sim / uitest    iOS をシミュレータで起動 / UI テスト（ios/Makefile）
 #   make archive / export-testflight / upload / release   TestFlight 向けに作る・書き出す・上げる（ios/Makefile）
@@ -24,12 +29,16 @@ LABEL     := jp.kechiiiiin.fam-echo.relay
 PLIST     := relay/build/$(LABEL).plist
 AGENTS    := $(HOME)/Library/LaunchAgents
 
+WATCHDOG_DIR   := $(CURDIR)/watchdog
+WATCHDOG_LABEL := jp.kechiiiiin.fam-echo.watchdog
+WATCHDOG_PLIST := watchdog/build/$(WATCHDOG_LABEL).plist
+
 CLOUDFLARED  ?= $(shell command -v cloudflared || echo /opt/homebrew/bin/cloudflared)
 TUNNEL_LABEL := jp.kechiiiiin.fam-echo.tunnel
 TUNNEL_CONF  := $(CURDIR)/tunnel/build/config.yml
 TUNNEL_PLIST := tunnel/build/$(TUNNEL_LABEL).plist
 
-.PHONY: help relay-test relay-run relay-plist relay-install relay-uninstall relay-log tunnel-plist tunnel-install tunnel-uninstall tunnel-log install check sim uitest \
+.PHONY: help relay-test relay-run relay-plist relay-install relay-uninstall relay-log tunnel-plist tunnel-install tunnel-uninstall tunnel-log watchdog-test watchdog-plist watchdog-install watchdog-uninstall watchdog-log install check sim uitest \
         archive export-testflight upload release device-list device-install asc-test
 
 help:
@@ -85,7 +94,30 @@ tunnel-uninstall:
 tunnel-log:
 	tail -f $(LOG_DIR)/tunnel.log
 
-install: relay-install tunnel-install
+watchdog-test:
+	bash watchdog/tests/test_watchdog.sh
+
+watchdog-plist:
+	@mkdir -p watchdog/build
+	sed -e 's|@WATCHDOG_DIR@|$(WATCHDOG_DIR)|g' -e 's|@LOG_DIR@|$(LOG_DIR)|g' \
+	  watchdog/launchd/$(WATCHDOG_LABEL).plist.template > $(WATCHDOG_PLIST)
+	plutil -lint $(WATCHDOG_PLIST)
+
+watchdog-install: watchdog-plist
+	mkdir -p $(LOG_DIR) $(AGENTS)
+	cp $(WATCHDOG_PLIST) $(AGENTS)/$(WATCHDOG_LABEL).plist
+	-launchctl bootout gui/$$(id -u)/$(WATCHDOG_LABEL) 2>/dev/null
+	launchctl bootstrap gui/$$(id -u) $(AGENTS)/$(WATCHDOG_LABEL).plist
+	@echo "見張りを常駐させました。ログ: $(LOG_DIR)/watchdog.log（正常時は無音）"
+
+watchdog-uninstall:
+	-launchctl bootout gui/$$(id -u)/$(WATCHDOG_LABEL)
+	rm -f $(AGENTS)/$(WATCHDOG_LABEL).plist
+
+watchdog-log:
+	tail -f $(LOG_DIR)/watchdog.log
+
+install: relay-install tunnel-install watchdog-install
 
 check:
 	$(MAKE) -C ios check
